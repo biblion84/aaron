@@ -1,0 +1,39 @@
+Mozilla/5.0 (Linux; Android 5.0.2; Redmi Note 3 Build/LRX22G; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/46.0.2490.76 Mobile Safari/537.36 YandexSearch/E344
+Mozilla/5.0 (Linux; Android 7.0; Redmi 4 Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.132 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 5.0.2; Lenovo S820 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 10; moto g stylus Build/QPR30.80-58-8-3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/298.0.0.40.116;]
+Mozilla/5.0 (Linux; Android 9; moto g(8) plus Build/PPI29.65-43; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36 Instagram 168.0.0.4.355 Android (28/9; 356dpi; 1080x2136; motorola; moto g(8) plus; doha; qcom; pt_BR; 260037038)
+Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Mobile/15E148 Safari/604.1 RDDocuments/7.5.6.750
+Mozilla/5.0 (Linux; Android 7.0; SM-G935F Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0.4280.86 Mobile Safari/537.36 Instagram 167.1.0.25.120 Android (24/7.0; 480dpi; 1080x1920; samsung; SM-G935F; hero2lte; samsungexynos8890; pt_BR; 259829115)
+Mozilla/5.0 (Linux; Android 4.4.2; SM-G870F Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.99 Mobile Safari/537.36 OPR/9E7619F0069CC593
+Mozilla/5.0 (Linux; arm; Android 9; M12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 YaApp_Android/20.110.0 YaSearchBrowser/20.110.0 BroPP/1.0 SA/3 Mobile Safari/537.36
+Mozilla/5.0 (iPhone; CPU iPhone OS 13_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/63.0.3239.132 Mobile/15E148 Safari/604.1
+Mozilla/5.0 (Linux; Android 5.0; SM-T315T Build/LRX21T; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/46.0.2490.76 Mobile Safari/537.36 YandexSearch/A106
+Mozilla/5.0 (Linux; Android 4.4.4; SM-G900S Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3332.0 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 7.0; SM-J106H Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3332.0 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 6.0; SM-J510GN Build/MMB29K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/46.0.2490.76 Mobile Safari/537.36 YandexSearch/A8EE
+Mozilla/5.0 (Linux; Android 10; SM-G970F Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36 Instagram 167.1.0.25.120 Android (29/10; 450dpi; 1080x2029; samsung; SM-G970F; beyond0; exynos9820; pt_BR; 259829115)
+Mozilla/5.0 (Linux; Android 6.0; iris 820 Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/85.0.4183.127 Mobile Safari/537.36 (Mobile; afma-sdk-a-v204102999.203404000.1)
+Mozilla/5.0 (Linux; Android 5.1; S40) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.127 Mobile Safari/537.36 (Ecosia android@85.0.4183.127)
+Mozilla/5.0 (Linux; Android 7.1.1; Moto E (4) Build/NPQS26.69-64-23; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0.4280.86 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/297.0.0.36.116;]
+Mozilla/5.0 (Linux; Android 10; SM-A715F Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36[FBAN/EMA;FBLC/el_GR;FBAV/227.0.0.5.115;]
+Mozilla/5.0 (Linux; Android 10; SM-G965U1 Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0.4280.66 Mobile Safari/537.36 (Mobile; afma-sdk-a-v204102999.202510000.1)
+Mozilla/5.0 (Linux; Android 7.1.1; LG-M700 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0.4280.86 Mobile Safari/537.36 (Mobile; afma-sdk-a-v204102999.19649000.1)
+Mozilla/5.0 (Linux; Android 10; Mi MIX 3 Build/QKQ1.190828.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0.4280.86 Mobile Safari/537.36 (Mobile; afma-sdk-a-v204102999.202006000.1)
+Mozilla/5.0 (Linux; Android 5.0.1; SM-A500W Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 YaBrowser/15.4.2272.3842.00 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 5.1.1; SM-J320F Build/LMY47V; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.85 Mobile Safari/537.36 (Mobile; afma-sdk-a-v204102999.20088000.1)
+Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 167.0.0.18.114 (iPhone10,6; iOS 14_1; pt_AT; pt-BR; scale=3.00; 1125x2436; 257196069)
+Mozilla/5.0 (Linux; Android 10; PCT-L29 Build/HUAWEIPCT-L29; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/84.0.4147.111 Mobile Safari/537.36 com.yandex.zen/8.7.0.8191 (HUAWEI PCT-L29; Android 10) ZenKit/2.8.7.0-internalNewdesign-Zen.8191
+Mozilla/5.0 (Linux; Android 10; SM-G960F Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36 Instagram 167.0.0.24.120 Android (29/10; 320dpi; 720x1384; samsung; SM-G960F; starlte; samsungexynos9810; uk_UA; 256966628)
+Mozilla/5.0 (Linux; Android 9; LM-X420 Build/PKQ1.190522.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.101 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/297.0.0.36.116;]
+Mozilla/5.0 (Linux; Android 10; SM-A715F Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36 Instagram 167.1.0.25.120 Android (29/10; 420dpi; 1080x2183; samsung; SM-A715F; a71; qcom; sr_RS; 259829115)
+Mozilla/5.0 (Linux; Android 9; moto g(6) plus Build/PPWS29.116-16-24; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.110 Mobile Safari/537.36 Instagram 165.1.0.29.119 Android (28/9; 408dpi; 1080x2038; motorola; moto g(6) plus; evert_n; qcom; es_MX; 253447816)
+Mozilla/5.0 (Linux; Android 9; Redmi Note 8T Build/PKQ1.190616.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.198 Mobile Safari/537.36 Instagram 167.1.0.25.120 Android (28/9; 374dpi; 1080x2150; Xiaomi/xiaomi; Redmi Note 8T; willow; qcom; de_DE; 259829115)
+Mozilla/5.0 (Linux; U; Android 6.0; ru-RU; SCH-I535PP Build/MMB29K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/11.3.0.950 U3/0.8.0 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 6.0; ALCATEL ONE TOUCH 7041D Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 YaBrowser/16.6.0.8810.00 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 6.0; Lenovo S960 Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3332.0 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 5.0.1; SM-G870F Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 YaBrowser/17.3.1.383.00 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 4.4.2; Lenovo S850 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 YaBrowser/17.3.1.383.00 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 4.4.2; Lenovo A369i Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.98 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 4.3.4; Xperia V Build/IMM76I) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 YaBrowser/17.3.1.383.00 Mobile Safari/E7FBAF
+Mozilla/5.0 (Linux; Android 5.0.1; SM-G530MU Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3332.0 Mobile Safari/E7FBAF
