@@ -57,10 +57,9 @@ func main() {
 	}
 
 	// Channel for tasks (postIDs as string)
-	tasks := make(chan string, 5)
+	tasks := make(chan string, *COUNT)
 	results := make(chan []byte)
-	retry := make(chan string, 100)
-
+	skipped := make(chan string)
 	// Sender goroutine
 	go func() {
 		for i := 0; i < *COUNT; i++ {
@@ -68,13 +67,7 @@ func main() {
 			postID := strconv.FormatInt(num, 36)
 			tasks <- postID
 		}
-		for {
-			postID, ok := <-retry
-			if !ok {
-				break
-			}
-			tasks <- postID
-		}
+
 		close(tasks)
 	}()
 
@@ -87,50 +80,21 @@ func main() {
 		if len(proxies) != 0 {
 			proxy = proxies[rand.Intn(len(proxies))]
 		}
-		go scrapeWorker(&wg, tasks, results, retry, proxy, userAgents[rand.Intn(len(userAgents))])
+		go scrapeWorker(&wg, tasks, skipped, results, proxy, userAgents[rand.Intn(len(userAgents))])
 	}
 
 	// Start writer goroutine
 	go writeResultsToFile(results, *OUTPUT_FILENAME)
+	go writeSkippedToFile(skipped, strings.Split(*OUTPUT_FILENAME, ".")[0]+"_skipped.json")
 
 	wg.Wait()
-	close(retry)
 	close(results)
-
-	log.Println("collecting skipped retry")
-
-	// Collect skipped
-	skipped := []string{}
-	for id := range retry {
-		skipped = append(skipped, id)
-	}
-	log.Println("collecting skipped tasks")
-
-	for id := range tasks {
-		skipped = append(skipped, id)
-	}
-	log.Println("finished collecting skipped index")
-
-	// Write skipped to file
-	if len(skipped) > 0 {
-		skippedFile := strings.Replace(*OUTPUT_FILENAME, ".json", "_skipped.json", 1)
-		skippedData, err := json.Marshal(skipped)
-		if err != nil {
-			log.Printf("Failed to marshal skipped IDs: %v", err)
-		} else {
-			err = os.WriteFile(skippedFile, skippedData, 0644)
-			if err != nil {
-				log.Printf("Failed to write skipped file: %v", err)
-			} else {
-				log.Printf("Wrote %d skipped IDs to %s", len(skipped), skippedFile)
-			}
-		}
-	}
+	close(skipped)
 
 	log.Println("Scraping completed")
 }
 
-func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, results chan<- []byte, retry chan<- string, proxy, userAgent string) {
+func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, skipped chan<- string, results chan<- []byte, proxy, userAgent string) {
 	defer wg.Done()
 
 	// Create HTTP transport
@@ -167,13 +131,14 @@ func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, results chan<- []byte
 		// Execute request
 		resp, err := client.Do(req)
 		if err != nil {
+			skipped <- postID
 			log.Printf("Failed to fetch post %s: %v", postID, err)
 			break
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			retry <- postID
+			skipped <- postID
 
 			log.Printf("Non-OK status for post %s: %d", postID, resp.StatusCode)
 			if resp.StatusCode == http.StatusForbidden { // 403
@@ -186,7 +151,7 @@ func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, results chan<- []byte
 
 					break
 				}
-				log.Printf("Retrying post %s later due to 429", postID)
+				log.Printf("skipped post %s due to 429", postID)
 			} else {
 				consecutive429 = 0
 			}
@@ -218,6 +183,17 @@ func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, results chan<- []byte
 		time.Sleep(time.Second)
 	}
 	fmt.Println("WORKER DONE")
+}
+
+func writeSkippedToFile(skipped <-chan string, outputFile string) {
+	f, err := os.Create(outputFile)
+	if err != nil {
+		log.Fatalf("Failed to create output file: %v", err)
+	}
+	defer f.Close()
+	for id := range skipped {
+		f.WriteString(id + "\n")
+	}
 }
 
 func writeResultsToFile(results <-chan []byte, outputFile string) {
