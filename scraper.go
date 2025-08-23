@@ -17,12 +17,19 @@ import (
 	"time"
 )
 
+// I want this scraper to be a bit more production ready.
+// Need to be able to fetch posts infinitely. Rotating proxies when they're blocked
+// Retrying IDs that have failed
+
 var (
 	START_ID        = flag.String("start-id", "", "Starting post ID (base36)")
 	COUNT           = flag.Int("count", 0, "Number of posts to scrape")
 	PROXIES_STRING  = flag.String("proxies", "", "Comma-separated list of proxy URLs (optional)")
 	OUTPUT_FILENAME = flag.String("output-file", "scraped_posts.json", "Output JSON file")
 )
+
+// We can fetch max 100 post per request max
+const STEP_SIZE = 100
 
 //go:embed useragents.txt
 var USER_AGENT_FILE string
@@ -56,34 +63,36 @@ func main() {
 		log.Fatalf("Invalid starting post ID: %v", err)
 	}
 
-	// Channel for tasks (postIDs as string)
-	tasks := make(chan string, *COUNT)
+	tasks := make(chan int64, 130)
 	results := make(chan []byte)
-	skipped := make(chan string)
-	// Sender goroutine
+	skipped := make(chan int64)
+	throttle := make(chan bool)
+	i := 0
 	go func() {
-		for i := 0; i < *COUNT; i++ {
-			num := startNum + int64(i)
-			postID := strconv.FormatInt(num, 36)
-			tasks <- postID
+		// Indefinitely feed new IDs
+		for range *COUNT {
+			select {
+			case <-throttle:
+				time.Sleep(time.Second)
+			default:
+				i += STEP_SIZE
+				num := startNum + int64(i)
+				tasks <- num
+			}
 		}
-
-		close(tasks)
 	}()
 
 	var wg sync.WaitGroup
 
-	// Start 10 workers (for up to 10 in-flight requests)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 1; i++ {
 		wg.Add(1)
 		proxy := ""
 		if len(proxies) != 0 {
 			proxy = proxies[rand.Intn(len(proxies))]
 		}
-		go scrapeWorker(&wg, tasks, skipped, results, proxy, userAgents[rand.Intn(len(userAgents))])
+		go scrapeWorker(&wg, tasks, skipped, throttle, results, proxy, userAgents[rand.Intn(len(userAgents))])
 	}
 
-	// Start writer goroutine
 	go writeResultsToFile(results, *OUTPUT_FILENAME)
 	go writeSkippedToFile(skipped, strings.Split(*OUTPUT_FILENAME, ".")[0]+"_skipped.json")
 
@@ -94,13 +103,11 @@ func main() {
 	log.Println("Scraping completed")
 }
 
-func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, skipped chan<- string, results chan<- []byte, proxy, userAgent string) {
+func scrapeWorker(wg *sync.WaitGroup, tasks <-chan int64, skipped chan<- int64, throttle chan<- bool, results chan<- []byte, proxy, userAgent string) {
 	defer wg.Done()
 
-	// Create HTTP transport
 	tr := &http.Transport{}
 	if proxy != "" {
-		// Parse proxy URL
 		proxyURL, err := url.Parse(proxy)
 		if err != nil {
 			log.Printf("Invalid proxy %s: %v", proxy, err)
@@ -115,12 +122,16 @@ func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, skipped chan<- string
 	}
 
 	consecutive429 := 0
+	//var postResponse PostResponse
 
+	posts := make([]string, STEP_SIZE)
 	for postID := range tasks {
-		// Build URL
-		apiURL := fmt.Sprintf("https://www.reddit.com/api/info.json?id=t3_%s", postID)
+		for i := range STEP_SIZE {
+			posts[i] = "t3_" + strconv.FormatInt(postID+int64(i), 36)
+		}
 
-		// Create request
+		apiURL := fmt.Sprintf("https://www.reddit.com/api/info.json?id=%s", strings.Join(posts, ","))
+
 		req, err := http.NewRequest("GET", apiURL, nil)
 		if err != nil {
 			log.Printf("Failed to create request for post %s: %v", postID, err)
@@ -128,7 +139,6 @@ func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, skipped chan<- string
 		}
 		req.Header.Set("User-Agent", userAgent)
 
-		// Execute request
 		resp, err := client.Do(req)
 		if err != nil {
 			skipped <- postID
@@ -155,44 +165,52 @@ func scrapeWorker(wg *sync.WaitGroup, tasks <-chan string, skipped chan<- string
 			} else {
 				consecutive429 = 0
 			}
-			time.Sleep(10 * time.Second) // Sleep longer on non-200 to cool down this proxy/userAgent
+			// Sleep longer on non-200 to cool down this proxy/userAgent
+			time.Sleep(10 * time.Second)
 			continue
 		}
 
 		consecutive429 = 0
 
-		// Read response body
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("Failed to read response for post %s: %v", postID, err)
 			continue
 		}
 
-		// Check if body is valid JSON
 		if !json.Valid(body) {
 			log.Printf("Invalid JSON response for post %s (possibly blocked or HTML)", postID)
 			continue
 		}
 
-		// Send to results
+		//if err := json.Unmarshal(body, &postResponse); err != nil {
+		//	log.Printf("error while unmarshalling %s : %v", postID, err)
+		//	continue
+		//}
+		//
+		//if len(postResponse.Data.Children) == 0 && postResponse.Kind != "" {
+		//	// Throttling as we hit the last post
+		//	throttle <- true
+		//	continue
+		//}
+
 		results <- body
 
 		log.Printf("Successfully scraped post %s", postID)
 
-		// Rate limit: sleep 1 second between requests
 		time.Sleep(time.Second)
 	}
 	fmt.Println("WORKER DONE")
 }
 
-func writeSkippedToFile(skipped <-chan string, outputFile string) {
+func writeSkippedToFile(skipped <-chan int64, outputFile string) {
 	f, err := os.Create(outputFile)
 	if err != nil {
 		log.Fatalf("Failed to create output file: %v", err)
 	}
 	defer f.Close()
 	for id := range skipped {
-		f.WriteString(id + "\n")
+		f.WriteString(strconv.Itoa(int(id)) + "\n")
 	}
 }
 
