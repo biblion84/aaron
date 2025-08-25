@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -11,9 +12,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -23,13 +26,17 @@ import (
 
 var (
 	START_ID        = flag.String("start-id", "", "Starting post ID (base36)")
-	COUNT           = flag.Int("count", 0, "Number of posts to scrape")
 	PROXIES_STRING  = flag.String("proxies", "", "Comma-separated list of proxy URLs (optional)")
 	OUTPUT_FILENAME = flag.String("output-file", "scraped_posts.json", "Output JSON file")
 )
 
 // We can fetch max 100 post per request max
 const STEP_SIZE = 100
+const WORKERS = 10
+
+var (
+	ERR_NON_200_RESPONSE = errors.New("non 200 response")
+)
 
 //go:embed useragents.txt
 var USER_AGENT_FILE string
@@ -37,7 +44,7 @@ var USER_AGENT_FILE string
 func main() {
 	flag.Parse()
 
-	if *START_ID == "" || *COUNT <= 0 {
+	if *START_ID == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -63,34 +70,46 @@ func main() {
 		log.Fatalf("Invalid starting post ID: %v", err)
 	}
 
-	tasks := make(chan int64, 130)
+	tasks := make(chan int64, WORKERS)
 	results := make(chan []byte)
-	skipped := make(chan int64)
-	throttle := make(chan bool)
-	i := 0
+	skipped := make(chan int64, WORKERS*2)
+	inflight := make(chan struct{}, WORKERS)
+	i := int64(0)
+
+	shutdown := false
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigCh
+		log.Println("Received shutdown signal")
+		shutdown = true
+	}()
+
 	go func() {
 		// Indefinitely feed new IDs
-		for range *COUNT {
-			select {
-			case <-throttle:
-				time.Sleep(time.Second)
-			default:
-				i += STEP_SIZE
-				num := startNum + int64(i)
-				tasks <- num
+		// Retrying IDs from the skipped channel first
+		for {
+			if shutdown {
+				close(tasks)
+				return
 			}
+			inflight <- struct{}{}
+			var nextId int64
+			if len(skipped) > 0 {
+				nextId = <-skipped
+			} else {
+				i += STEP_SIZE
+				nextId = startNum + i
+			}
+			tasks <- nextId
 		}
 	}()
 
 	var wg sync.WaitGroup
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < WORKERS; i++ {
 		wg.Add(1)
-		proxy := ""
-		if len(proxies) != 0 {
-			proxy = proxies[rand.Intn(len(proxies))]
-		}
-		go scrapeWorker(&wg, tasks, skipped, throttle, results, proxy, userAgents[rand.Intn(len(userAgents))])
+		go scrapeWorker(&wg, tasks, skipped, results, inflight, proxies, userAgents)
 	}
 
 	go writeResultsToFile(results, *OUTPUT_FILENAME)
@@ -99,108 +118,109 @@ func main() {
 	wg.Wait()
 	close(results)
 	close(skipped)
+	close(inflight)
 
 	log.Println("Scraping completed")
 }
 
-func scrapeWorker(wg *sync.WaitGroup, tasks <-chan int64, skipped chan<- int64, throttle chan<- bool, results chan<- []byte, proxy, userAgent string) {
+type Worker struct {
+	proxy     string
+	userAgent string
+	client    http.Client
+}
+
+func (w *Worker) SetRandomIdentity(proxies, userAgents []string) {
+	w.proxy = proxies[rand.Intn(len(proxies))]
+	w.userAgent = userAgents[rand.Intn(len(userAgents))]
+
+	w.client = http.Client{
+		Timeout: time.Second * 30,
+	}
+
+	proxyURL, err := url.Parse(w.proxy)
+	if err != nil {
+		log.Printf("Invalid proxy %s: %v", w.proxy, err)
+		return
+	}
+
+	w.client.Transport = &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
+	}
+}
+
+func scrapeWorker(wg *sync.WaitGroup, tasks <-chan int64, skipped chan<- int64, results chan<- []byte, inflight <-chan struct{}, proxies, userAgents []string) {
 	defer wg.Done()
 
-	tr := &http.Transport{}
-	if proxy != "" {
-		proxyURL, err := url.Parse(proxy)
-		if err != nil {
-			log.Printf("Invalid proxy %s: %v", proxy, err)
-			return
-		}
-		tr.Proxy = http.ProxyURL(proxyURL)
-	}
+	worker := Worker{}
+	worker.SetRandomIdentity(proxies, userAgents)
 
-	client := &http.Client{
-		Transport: tr,
-		Timeout:   30 * time.Second,
-	}
-
-	consecutive429 := 0
-	//var postResponse PostResponse
+	consecutiveNonValidResponse := 0
 
 	posts := make([]string, STEP_SIZE)
 	for postID := range tasks {
+
 		for i := range STEP_SIZE {
 			posts[i] = "t3_" + strconv.FormatInt(postID+int64(i), 36)
 		}
 
 		apiURL := fmt.Sprintf("https://www.reddit.com/api/info.json?id=%s", strings.Join(posts, ","))
 
-		req, err := http.NewRequest("GET", apiURL, nil)
+		response, err := worker.DoRequest(apiURL)
 		if err != nil {
-			log.Printf("Failed to create request for post %s: %v", postID, err)
-			break
-		}
-		req.Header.Set("User-Agent", userAgent)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			skipped <- postID
-			log.Printf("Failed to fetch post %s: %v", postID, err)
-			break
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			skipped <- postID
-
-			log.Printf("Non-OK status for post %s: %d", postID, resp.StatusCode)
-			if resp.StatusCode == http.StatusForbidden { // 403
-				log.Printf("403 encountered, shutting down this scraper")
-				break
-			} else if resp.StatusCode == http.StatusTooManyRequests { // 429
-				consecutive429++
-				if consecutive429 >= 2 {
-					log.Printf("too many 429 on this scraper, shutting down")
-
-					break
-				}
-				log.Printf("skipped post %s due to 429", postID)
+			if errors.Is(err, ERR_NON_200_RESPONSE) && consecutiveNonValidResponse < 1 {
+				consecutiveNonValidResponse++
 			} else {
-				consecutive429 = 0
+				log.Printf("re-rolling worker identity")
+				worker.SetRandomIdentity(proxies, userAgents)
 			}
-			// Sleep longer on non-200 to cool down this proxy/userAgent
-			time.Sleep(10 * time.Second)
+			log.Printf("%d skipped, will retry", postID)
+			skipped <- postID
+			<-inflight
 			continue
+		} else {
+			consecutiveNonValidResponse = 0
 		}
 
-		consecutive429 = 0
+		<-inflight
 
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Printf("Failed to read response for post %s: %v", postID, err)
-			continue
-		}
+		results <- response
 
-		if !json.Valid(body) {
-			log.Printf("Invalid JSON response for post %s (possibly blocked or HTML)", postID)
-			continue
-		}
-
-		//if err := json.Unmarshal(body, &postResponse); err != nil {
-		//	log.Printf("error while unmarshalling %s : %v", postID, err)
-		//	continue
-		//}
-		//
-		//if len(postResponse.Data.Children) == 0 && postResponse.Kind != "" {
-		//	// Throttling as we hit the last post
-		//	throttle <- true
-		//	continue
-		//}
-
-		results <- body
-
-		log.Printf("Successfully scraped post %s", postID)
+		log.Printf("Successfully scraped post %d", postID)
 
 		time.Sleep(time.Second)
 	}
 	fmt.Println("WORKER DONE")
+}
+
+func (w *Worker) DoRequest(url string) ([]byte, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request for post: %v", err)
+	}
+	req.Header.Set("User-Agent", w.userAgent)
+
+	resp, err := w.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch post: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Invalid status code for post: %v, sleeping to cool off", resp.StatusCode)
+		time.Sleep(3 * time.Second)
+		return nil, ERR_NON_200_RESPONSE
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response for post: %v", err)
+	}
+
+	if !json.Valid(body) {
+		return nil, fmt.Errorf("invalid JSON response")
+	}
+
+	return body, nil
 }
 
 func writeSkippedToFile(skipped <-chan int64, outputFile string) {
